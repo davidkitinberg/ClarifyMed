@@ -1,3 +1,12 @@
+"""
+tts_client.py — Text-to-Speech via Gemini
+==========================================
+Converts slide content text to audio using the Gemini TTS model (Aoede voice).
+Aoede is a multilingual voice that handles Hebrew, Arabic, Russian, Amharic,
+and English within a single API call — no per-language voice selection needed.
+Gemini returns raw PCM audio; _pcm_to_wav() wraps it in a WAV container so
+browsers can play it directly without extra decoding.
+"""
 import io
 import os
 import wave
@@ -26,6 +35,8 @@ def synthesize(text: str, language_code: str) -> tuple[bytes, str] | None:
     """
     Returns (audio_bytes, mime_type) or None if no key is available.
     Uses Gemini TTS — no extra API setup beyond GEMINI_API_KEY.
+    language_code is accepted for interface consistency but not forwarded to the API —
+    Aoede detects the language automatically from the input text.
     """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -52,6 +63,8 @@ def synthesize(text: str, language_code: str) -> tuple[bytes, str] | None:
     mime = part.inline_data.mime_type  # e.g. "audio/pcm;rate=24000"
 
     if "pcm" in mime.lower():
+        # Parse the actual sample rate from the mime string — Gemini may return a rate
+        # different from the 24000 default, so we must not hardcode it
         rate = 24000
         if "rate=" in mime:
             try:

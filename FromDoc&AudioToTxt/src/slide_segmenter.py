@@ -1,3 +1,14 @@
+"""
+slide_segmenter.py — AI Slide Segmentation
+============================================
+Takes a patient-friendly medical summary and asks Gemini to break it into
+3-5 content slides plus one final summary slide.
+For each regular slide: produces medical keywords (word + English image_prompt).
+For the final slide: consolidates all medications, diagnoses, referrals, tests,
+and sick-leave entries into structured summary_items.
+Returns a typed JSON array that server.py enriches with TTS audio and keyword
+images before sending to the frontend.
+"""
 import json
 import os
 import time
@@ -86,14 +97,15 @@ def segment(
         except Exception as e:
             last_err = e
             if "503" in str(e) and attempt < 2:
-                time.sleep(3 ** attempt)
+                time.sleep(3 ** attempt)  # exponential backoff: 1s, 3s, 9s
                 continue
             raise
     else:
         raise last_err
     raw = response.text.strip()
 
-    # Strip markdown code fences if the model wraps the JSON
+    # Even with explicit instructions, the model sometimes wraps the JSON in ```json ... ```.
+    # Split on ``` and try to parse each block — the valid JSON block will succeed.
     if "```" in raw:
         for block in raw.split("```"):
             cleaned = block.strip().lstrip("json").strip()

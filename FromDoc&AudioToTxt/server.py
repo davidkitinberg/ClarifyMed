@@ -1,3 +1,17 @@
+"""
+server.py — ClarifyMed Flask API Server
+========================================
+Entry point for the backend. Defines two main API endpoints:
+
+  POST /api/process      — receives a medical document (PDF/image/text) and/or
+                           an audio recording, processes them through Gemini, and
+                           returns a patient-friendly summary in the selected languages.
+
+  POST /api/presentation — receives a ready summary text, segments it into slides
+                           with keywords, generates TTS audio and keyword images in
+                           parallel (ThreadPoolExecutor), and returns everything
+                           base64-encoded to the frontend.
+"""
 import base64
 import os
 import tempfile
@@ -13,7 +27,7 @@ from src import pdf_extractor, prompt_builder, gemini_client, output_formatter
 from src import language_selector, slide_segmenter, tts_client, image_generator
 
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # allow requests from the Vite dev server (different port) and any production domain
 
 IMAGE_MIME_TYPES = {
     ".jpg": "image/jpeg",
@@ -45,6 +59,7 @@ def process():
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
+    # TemporaryDirectory is auto-deleted when the `with` block exits — no leftover patient files on disk
     with tempfile.TemporaryDirectory() as tmpdir:
         pdf_path = None
         doc_mime = "application/pdf"
@@ -79,6 +94,7 @@ def process():
                 return jsonify({"error": f"Unsupported audio format: {ext}"}), 400
 
         hmo = "Unknown"
+        # HMO detection only applies to PDFs — image scans don't carry enough text on page 1
         if pdf_path and doc_mime == "application/pdf":
             try:
                 pdf_info = pdf_extractor.extract(pdf_path)
@@ -173,11 +189,12 @@ def presentation():
             all_keywords.extend(slide.get("keywords", []))
 
     if all_keywords:
+        # max_workers=4 keeps us within Imagen API rate limits while still parallelising
         with ThreadPoolExecutor(max_workers=4) as pool:
             futures = {pool.submit(_generate_keyword_image, kw): kw for kw in all_keywords}
             for future in as_completed(futures):
                 try:
-                    future.result()  # kw dict mutated in-place
+                    future.result()  # kw dict mutated in-place by _generate_keyword_image
                 except Exception as e:
                     print(f"[IMAGE POOL ERROR] {e}")
 

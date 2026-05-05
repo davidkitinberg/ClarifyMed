@@ -1,3 +1,14 @@
+"""
+image_generator.py — Medical Image Generation via Imagen
+==========================================================
+Generates medical images for presentation slides using the Imagen API.
+Two public functions:
+  generate(slide_title, icon)     — 4:3 hero image for a slide background (currently unused)
+  generate_keyword(image_prompt)  — 1:1 square illustration for a keyword card
+
+Tries nano-banana-pro-preview first (higher quality), then automatically falls
+back to imagen-4.0-fast-generate-001 if the first model is unavailable.
+"""
 import os
 from google import genai
 from google.genai import types
@@ -14,16 +25,17 @@ _MODELS = [
 _BASE_STYLE = (
     "photorealistic, professional medical photography, "
     "clean composition, soft natural lighting, calming colors, "
-    "no text, no people's faces"
+    "no text, no people's faces"  # "no faces" avoids privacy issues with generated patient imagery
 )
 
 _KEYWORD_STYLE = (
     "simple clean medical illustration, white background, "
-    "icon style, no text, no people's faces, flat vector art"
+    "icon style, no text, no people's faces, flat vector art"  # white bg integrates cleanly into the card UI
 )
 
 
 def _call_imagen(client: genai.Client, prompt: str, aspect_ratio: str) -> bytes | None:
+    # Try each model in order; first success wins, remaining models are skipped
     for model in _MODELS:
         try:
             response = client.models.generate_images(
@@ -39,7 +51,7 @@ def _call_imagen(client: genai.Client, prompt: str, aspect_ratio: str) -> bytes 
         except Exception as e:
             print(f"[IMAGE] {model} failed: {e}")
             continue
-    return None
+    return None  # both models failed — caller renders the keyword card without an image
 
 
 def generate(slide_title: str, icon: str) -> bytes | None:

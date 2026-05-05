@@ -244,11 +244,20 @@ export function PresentationPlayer({ slides, language, onClose }: PresentationPl
   const keywords: Keyword[] = slide?.keywords ?? [];
   const padNum = (n: number) => String(n).padStart(2, "0");
 
+  const CHUNK_SIZE = 7;
   const subtitleWords = slide?.content?.split(" ") ?? [];
-  const revealedCount = (isPlaying || progress > 0)
-    ? Math.max(1, Math.ceil(progress * subtitleWords.length))
-    : 0;
-  const subtitleText = subtitleWords.slice(0, revealedCount).join(" ");
+
+  const currentWordIndex = (isPlaying || progress > 0)
+    ? Math.min(Math.floor(progress * subtitleWords.length), subtitleWords.length - 1)
+    : -1;
+
+  const currentChunkIndex = currentWordIndex >= 0
+    ? Math.floor(currentWordIndex / CHUNK_SIZE)
+    : -1;
+
+  const subtitleText = currentChunkIndex >= 0
+    ? subtitleWords.slice(currentChunkIndex * CHUNK_SIZE, (currentChunkIndex + 1) * CHUNK_SIZE).join(" ")
+    : "";
 
   // ── Audio sync ──────────────────────────────────────────────────
   useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
@@ -495,9 +504,11 @@ export function PresentationPlayer({ slides, language, onClose }: PresentationPl
             <div className="px-8 py-4 min-h-[56px] flex items-center justify-center" dir={isRTL ? "rtl" : "ltr"}>
               <AnimatePresence mode="wait">
                 <motion.p
-                  key={subtitleText}
-                  initial={{ opacity: 0.6 }}
-                  animate={{ opacity: 1 }}
+                  key={`${current}-chunk-${currentChunkIndex}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
                   className="text-white text-center"
                   style={{
                     fontSize: "1rem",

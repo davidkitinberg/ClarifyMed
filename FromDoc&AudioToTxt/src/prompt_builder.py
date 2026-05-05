@@ -1,5 +1,18 @@
+"""
+prompt_builder.py — Gemini Prompt Construction
+================================================
+Assembles the full prompt sent to Gemini for medical summary generation.
+Reads CLAUDE.md from the project root as the System Role (AI instructions).
+Appends HMO-specific hints (HMO_HINTS) so Gemini knows how to parse tables
+and fields that differ between each Israeli health-fund document format.
+Returns a list of text parts that gemini_client combines with the uploaded
+document / audio file.
+
+⚠️  CLAUDE.md is part of the processing pipeline — do NOT delete it!
+"""
 from pathlib import Path
 
+# parent.parent: from src/ up to FromDoc&AudioToTxt/ where CLAUDE.md lives
 _CLAUDE_MD_PATH = Path(__file__).parent.parent / "CLAUDE.md"
 
 HMO_HINTS = {
@@ -77,6 +90,8 @@ def build(
     )
     instruction = _BASE_INSTRUCTION.format(language_sections=sections)
 
+    # Order matters: system role first, then document context, then optional transcript, then instruction.
+    # Gemini weighs earlier parts more heavily when resolving conflicts.
     parts = [
         f"SYSTEM ROLE:\n{claude_md}\n",
         f"DOCUMENT CONTEXT:\n{HMO_HINTS.get(hmo, HMO_HINTS['Unknown'])}\n",
