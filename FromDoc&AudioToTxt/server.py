@@ -1,5 +1,7 @@
+import base64
 import os
 import tempfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -8,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from src import pdf_extractor, prompt_builder, gemini_client, output_formatter
-from src import language_selector
+from src import language_selector, slide_segmenter, tts_client, image_generator
 
 app = Flask(__name__)
 CORS(app)
@@ -96,7 +98,6 @@ def process():
         except Exception as e:
             return jsonify({"error": f"AI processing failed: {str(e)}"}), 500
 
-        # Determine a meaningful source name for the output filename
         source_name = (
             doc_file.filename if doc_file and doc_file.filename
             else audio_file_req.filename if audio_file_req and audio_file_req.filename
@@ -105,7 +106,6 @@ def process():
 
     result = output_formatter.process_response(response_text, languages)
 
-    # Save to outputs/ folder (same as CLI usage)
     outputs_dir = Path(__file__).parent / "outputs"
     output_formatter.save_and_print(
         response_text=response_text,
@@ -116,6 +116,72 @@ def process():
     )
 
     return jsonify({"result": result})
+
+
+def _generate_keyword_image(kw: dict) -> dict:
+    """Worker: generate image for one keyword. Returns kw with 'image' field set."""
+    try:
+        img_bytes = image_generator.generate_keyword(kw.get("image_prompt", kw.get("word", "")))
+        kw["image"] = base64.b64encode(img_bytes).decode() if img_bytes else None
+    except Exception as e:
+        print(f"[KEYWORD IMAGE ERROR] {e}")
+        kw["image"] = None
+    return kw
+
+
+@app.route("/api/presentation", methods=["POST"])
+def presentation():
+    data = request.get_json(force=True)
+    summary_text = data.get("text", "").strip()
+    lang_code = data.get("language", "en")
+
+    if not summary_text:
+        return jsonify({"error": "No summary text provided."}), 400
+
+    # 1. Segment text into slides with Gemini
+    try:
+        slides = slide_segmenter.segment(summary_text, lang_code)
+    except Exception as e:
+        return jsonify({"error": f"Slide generation failed: {str(e)}"}), 500
+
+    # Ensure required fields exist on every slide
+    for slide in slides:
+        slide.setdefault("keywords", [])
+        slide.setdefault("is_summary", False)
+        slide.setdefault("summary_items", [])
+
+    # 2. Generate TTS audio for each slide (sequential — Gemini TTS has rate limits)
+    for slide in slides:
+        try:
+            result = tts_client.synthesize(slide.get("content", ""), lang_code)
+            if result:
+                audio_bytes, audio_mime = result
+                slide["audio"] = base64.b64encode(audio_bytes).decode()
+                slide["audio_mime"] = audio_mime
+            else:
+                slide["audio"] = None
+                slide["audio_mime"] = None
+        except Exception as tts_err:
+            print(f"[TTS ERROR] {tts_err}")
+            slide["audio"] = None
+            slide["audio_mime"] = None
+
+    # 3. Generate keyword images in parallel across all slides
+    all_keywords = []
+    for slide in slides:
+        if not slide.get("is_summary"):
+            all_keywords.extend(slide.get("keywords", []))
+
+    if all_keywords:
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            futures = {pool.submit(_generate_keyword_image, kw): kw for kw in all_keywords}
+            for future in as_completed(futures):
+                try:
+                    future.result()  # kw dict mutated in-place
+                except Exception as e:
+                    print(f"[IMAGE POOL ERROR] {e}")
+
+    return jsonify({"slides": slides})
 
 
 if __name__ == "__main__":

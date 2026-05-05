@@ -1,70 +1,58 @@
-I have a web application called ClarifyMed built with React + Vite.
-
-I need you to integrate the frontend UI with my existing backend code.
-
-
-## The Frontend Has:
-
-1. A file drop-zone for uploading a medical document (PDF/image)
-
-2. A voice recording drop-zone for uploading an audio file
-
-3. A language selector (Hebrew, English, Russian, Arabic, Amharic)
-
-4. A "Generate Avatar Video" button
-
-
-## My Backend Does: FromDoc&AudioToTxt
-
-- Accepts a medical document (PDF/text/image) → converts it to text
-
-- Accepts a voice recording → transcribes it to text
-
-- Can accept both inputs together
-
-- Returns the processed text as output
-
-
-## What I Need You To Do:
-
-1. Connect the file drop-zone so that when a user uploads a medical
-
-   document, it sends the file to the correct backend function/endpoint
-
-
-2. Connect the voice recording drop-zone so that when a user uploads
-
-   an audio file, it sends it to the correct transcription function
-
-
-3. When the "Generate Avatar Video" button is clicked:
-
-   - Collect whichever inputs the user provided (document, audio, or both)
-
-   - FromDoc&AudioToTxtSend them to the backend
-
-   - Wait for the text output
-
-   - Display the result on screen
-
-
-4. Pass the selected language to the backend so the output is
-
-   returned in the correct language
-
-
-5. Add loading states to the UI while the backend is processing
-
-
-6. Add error handling if something goes wrong
-
-
-## Notes:
-
-- Here is my backend code: FromDoc&AudioToTxt
-
-- The frontend code is in /src/app/components/
-
-- The main input component is InputZone.tsx
-
-- The button component is ActionButton.tsx
+>
+> # ROLE
+> You are a Senior Multimedia & AI Solutions Architect.
+>
+> # CONTEXT
+> We are enhancing the "ClarifyMed" web application by adding a **Visual
+> Medical Presentation** feature.
+> - The project already has a functional Frontend.
+> - We have the simplified medical summary available in 5 languages.
+> - Instead of a simple text output, we want a synchronized, visual
+> slideshow with narration and educational content.
+>
+> # CORE CONSTRAINTS (CRITICAL)
+> - **Language Support:** Perfect Hebrew support is mandatory for both
+> text processing and audio narration.
+> - **API Usage:** You are authorized to use the **Google Cloud API
+> suite** (already configured/available).
+> - **Paid Services:** You are strictly limited to using **maximum ONE
+> (1) paid external API** for the entire presentation workflow (e.g.,
+> for premium TTS or specialized video tools).
+>
+> # TASK
+> Implement the presentation generation logic and integrate it into the
+> existing UI:
+>
+> 1. **Slide Generation & Enrichment:**
+>    - Segment the summary into logical "Slides" (Introduction,
+> Diagnosis, Explanation, Treatment, Next Steps).
+>    - Use the **Google Gemini API** to generate a brief, 2-3 sentence
+> educational background for any medical condition mentioned to help the
+> patient understand their situation better.
+>
+> 2. **Multilingual Narration (TTS):**
+>    - Implement **Google Cloud Text-to-Speech** (Wavenet voices) to
+> narrate the slides. Ensure high-quality Hebrew voice output.
+>    - The narration must match the user's selected language from the site.
+>
+> 3. **Visual Synchronization:**
+>    - Build a logic that syncs the slide transitions with the audio duration.
+>    - Include synchronized **Subtitles** at the bottom of the
+> presentation in the selected language.
+>
+> 4. **UI Presentation:**
+>    - Design each slide to be visually clean and professional using
+> medical icons (e.g., Lucide-React).
+>    - The presentation should play within a modern, responsive "Player"
+> component.
+>
+> 5. **Integration into `_ClarifyMed`:**
+>    - Integrate this entire workflow into the existing `_ClarifyMed` frontend.
+>    - Ensure the "Generate" button triggers this sequence and that the
+> output replaces the static text result with this interactive
+> presentation.
+>
+> # DELIVERABLE
+> Update the frontend components and provide the integration code to
+> transform the processed data into a narrated, visual presentation
+> within the ClarifyMed UI.

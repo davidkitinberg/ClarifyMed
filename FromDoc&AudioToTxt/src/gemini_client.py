@@ -69,10 +69,22 @@ def generate_summary(
 
     content_parts.extend(prompt_parts)
 
-    response = client.models.generate_content(
-        model=model_name,
-        contents=content_parts,
-    )
+    last_err = None
+    for attempt in range(3):
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=content_parts,
+            )
+            break
+        except Exception as e:
+            last_err = e
+            if "503" in str(e) and attempt < 2:
+                time.sleep(3 ** attempt)
+                continue
+            raise
+    else:
+        raise last_err
 
     try:
         for f in uploaded_files:
