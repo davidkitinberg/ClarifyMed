@@ -34,7 +34,7 @@ Return ONLY a valid JSON array — no markdown fences, no extra text.
 Each slide object has exactly these fields:
 - "title"      : 2-4 word slide title in {lang_name}
 - "icon"       : exactly one of: clipboard-list | stethoscope | pill | calendar-check | bed | heart-pulse | activity | info
-- "content"    : 1-3 sentences in {lang_name} — this text will be read aloud to the patient, keep it warm and clear
+- "content"    : 1-3 sentences in {lang_name} — this text will be read aloud to the patient, keep it warm and clear. NEVER include the patient's first name or last name anywhere in this text.
 - "keywords"   : array of 2-4 keyword objects for THIS slide (NOT used on the final summary slide — set to [])
                  Each keyword object: {{ "word": "<medical term in {lang_name}>", "image_prompt": "<English description for image generation, 5-10 words, very specific medical visual>" }}
 - "is_summary" : boolean — true ONLY for the very last slide
@@ -59,6 +59,8 @@ Keyword image_prompt examples (always in English, very visual):
   "white round antibiotic tablet, close-up"
   "blood pressure cuff on arm, clinic"
   "X-ray of chest lungs, radiology"
+
+IMPORTANT: Do NOT use the patient's name anywhere in any slide content.
 
 The LAST slide must:
   - have "is_summary": true

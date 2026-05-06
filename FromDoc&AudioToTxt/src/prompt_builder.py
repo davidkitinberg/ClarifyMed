@@ -54,6 +54,7 @@ Start each paragraph with a short warm greeting appropriate to that language
 (e.g. "שלום, קיבלנו את תוצאות הביקור שלך..." in Hebrew,
 "Hello, here is a summary of your visit..." in English,
 "Здравствуйте, вот краткое изложение вашего визита..." in Russian, etc.)
+IMPORTANT: The greeting must NEVER include the patient's first name or last name — use only a generic greeting like "שלום" / "Hello" / "Здравствуйте".
 
 Then focus ONLY on what matters to the patient:
 1. What was found or diagnosed (in plain words, no medical jargon or codes)
@@ -62,6 +63,7 @@ Then focus ONLY on what matters to the patient:
 
 Do NOT include: patient name, doctor name, visit date, clinic name,
 medical record numbers, ICD codes, or any administrative details.
+The patient's name must NEVER appear anywhere in the output.
 
 Your entire response must be exactly this Markdown:
 

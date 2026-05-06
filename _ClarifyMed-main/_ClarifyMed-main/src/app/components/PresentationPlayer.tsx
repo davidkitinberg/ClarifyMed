@@ -132,8 +132,8 @@ function SummarySlideContent({ items, isRTL, fill }: { items: SummaryItem[]; isR
 
   if (sections.length === 0) {
     return (
-      <div className="px-8 py-10 text-center text-slate-400" style={{ fontSize: "0.9rem" }}>
-        No specific items to summarize.
+      <div className="px-8 py-10 text-center" style={{ fontSize: "1.1rem", color: "#4f8ef7", fontWeight: 600 }}>
+        החלמה מהירה!
       </div>
     );
   }
