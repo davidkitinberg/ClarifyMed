@@ -7,7 +7,7 @@
 
 **AI-Powered Medical Visit Summarizer & Visual Presentation Generator**
 
-*Built at a Hackathon 🏆*
+*Built during a Hackathon 🏆*
 
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react)](https://react.dev)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python)](https://python.org)
